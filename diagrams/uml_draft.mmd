@@ -1,0 +1,46 @@
+classDiagram
+    class Owner {
+        +str id
+        +str name
+        +list~Pet~ pets
+        +add_pet(pet: Pet) None
+    }
+
+    class Pet {
+        +str id
+        +str name
+        +str species
+        +int age
+        +list~Task~ tasks
+        +add_task(task: Task) None
+        +get_daily_agenda() list~Task~
+    }
+
+    class Task {
+        +str id
+        +str description
+        +int priority
+        +str due_time
+        +bool is_completed
+    }
+
+    class FeedingTask {
+        +str food_type
+        +float amount_oz
+    }
+
+    class MedicationTask {
+        +str medication_name
+        +str dosage
+    }
+
+    class AppointmentTask {
+        +str location
+        +str professional_name
+    }
+
+    Owner --> "*" Pet : manages
+    Pet --> "*" Task : tracks
+    FeedingTask --|> Task : inherits
+    MedicationTask --|> Task : inherits
+    AppointmentTask --|> Task : inherits
