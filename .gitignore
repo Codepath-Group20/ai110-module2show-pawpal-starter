@@ -9,3 +9,4 @@ env/
 *.pyc
 *.pyo
 *.pyd
+.coverage

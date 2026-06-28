@@ -1,5 +1,62 @@
+import sys
+from pathlib import Path
 import streamlit as st
 
+# --- PATH CONFIGURATION (AI-Native Safety) ---
+PROJECT_ROOT = Path(__file__).resolve().parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
+
+# Import your backend logic layers
+from pawpal_system import Owner, Pet, Task, Scheduler
+
+
+def render_schedule_briefing(schedule):
+    """
+    Render a short briefing below the Master Schedule table.
+    - `schedule` is a chronological list of Task objects (earliest first).
+    """
+    if not schedule:
+        st.info("No tasks in the master schedule to summarize.")
+        return
+
+    def is_high(p):
+        if isinstance(p, str):
+            return p.lower() in ("high", "critical")
+        try:
+            return int(p) >= 4
+        except Exception:
+            return False
+
+    # High-priority warning + examples
+    high_tasks = [t for t in schedule if is_high(getattr(t, "priority", None))]
+    if high_tasks:
+        st.markdown("⚠️ **Critical:** You have high-priority tasks scheduled.")
+        for t in high_tasks[:3]:
+            owner_name = next((p.name for p in st.session_state.owner.pets if t in p.tasks), "Unknown")
+            st.markdown(f"- **{owner_name}**: {t.description} — {t.due_time}")
+
+    # Next chronological task
+    next_task = schedule[0]
+    next_pet = next((p.name for p in st.session_state.owner.pets if next_task in p.tasks), "Unknown")
+    st.markdown(f"**Next up:** {next_pet} — {next_task.description} at {next_task.due_time}")
+
+    # Per-pet breakdown
+    lines = []
+    for pet in st.session_state.owner.pets:
+        pet_tasks = [t for t in schedule if t in pet.tasks]
+        if not pet_tasks:
+            continue
+        count = len(pet_tasks)
+        earliest = next(t for t in schedule if t in pet_tasks)
+        lines.append(f"- **{pet.name}**: {count} task{'s' if count != 1 else ''}; next at {earliest.due_time} — {earliest.description}")
+
+    if lines:
+        st.markdown("**Pet Breakdown:**")
+        for ln in lines:
+            st.markdown(ln)
+
+# --- STREAMLIT PAGE LAYOUT ---
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
 
 st.title("🐾 PawPal+")
@@ -7,82 +64,133 @@ st.title("🐾 PawPal+")
 st.markdown(
     """
 Welcome to the PawPal+ starter app.
-
-This file is intentionally thin. It gives you a working Streamlit app so you can start quickly,
-but **it does not implement the project logic**. Your job is to design the system and build it.
-
-Use this app as your interactive demo once your backend classes/functions exist.
+This app serves as your interactive demo, fully integrated with your object-oriented backend.
 """
 )
 
-with st.expander("Scenario", expanded=True):
+with st.expander("Scenario & Requirements", expanded=False):
     st.markdown(
         """
-**PawPal+** is a pet care planning assistant. It helps a pet owner plan care tasks
-for their pet(s) based on constraints like time, priority, and preferences.
-
-You will design and implement the scheduling logic and connect it to this Streamlit UI.
-"""
-    )
-
-with st.expander("What you need to build", expanded=True):
-    st.markdown(
-        """
-At minimum, your system should:
-- Represent pet care tasks (what needs to happen, how long it takes, priority)
+**PawPal+** is a pet care planning assistant. At minimum, your system should:
+- Represent pet care tasks (what needs to happen, priority, due time)
 - Represent the pet and the owner (basic info and preferences)
 - Build a plan/schedule for a day that chooses and orders tasks based on constraints
-- Explain the plan (why each task was chosen and when it happens)
 """
     )
 
 st.divider()
 
-st.subheader("Quick Demo Inputs (UI only)")
-owner_name = st.text_input("Owner name", value="Jordan")
-pet_name = st.text_input("Pet name", value="Mochi")
-species = st.selectbox("Species", ["dog", "cat", "other"])
+# --- 1. INITIALIZE PERSISTENT STATE ---
+if "owner" not in st.session_state:
+    st.session_state.owner = None
 
-st.markdown("### Tasks")
-st.caption("Add a few tasks. In your final version, these should feed into your scheduler.")
+# --- 2. PROFILE PROFILE SETUP (If no owner exists) ---
+if st.session_state.owner is None:
+    st.subheader("👤 Create Owner Profile")
+    username = st.text_input("Enter your name to start your PawPal dashboard:")
+    if username:
+        st.session_state.owner = Owner(id="owner_01", name=username)
+        st.rerun()
 
-if "tasks" not in st.session_state:
-    st.session_state.tasks = []
-
-col1, col2, col3 = st.columns(3)
-with col1:
-    task_title = st.text_input("Task title", value="Morning walk")
-with col2:
-    duration = st.number_input("Duration (minutes)", min_value=1, max_value=240, value=20)
-with col3:
-    priority = st.selectbox("Priority", ["low", "medium", "high"], index=2)
-
-if st.button("Add task"):
-    st.session_state.tasks.append(
-        {"title": task_title, "duration_minutes": int(duration), "priority": priority}
-    )
-
-if st.session_state.tasks:
-    st.write("Current tasks:")
-    st.table(st.session_state.tasks)
+# --- 3. ACTIVE DASHBOARD (If owner exists) ---
 else:
-    st.info("No tasks yet. Add one above.")
+    st.subheader(f"🏠 {st.session_state.owner.name}'s Dashboard")
+    
+    # --- SECTION A: ADD A NEW PET ---
+    with st.expander("➕ Register a New Pet", expanded=True):
+        with st.form("add_pet_form", clear_on_submit=True):
+            pet_name = st.text_input("Pet Name")
+            species = st.selectbox("Species", ["dog", "cat", "bird", "other"])
+            age = st.number_input("Age", min_value=0, max_value=30, value=1)
+            submitted_pet = st.form_submit_button("Register Pet")
 
-st.divider()
+        if submitted_pet and pet_name:
+            new_pet = Pet(
+                id=f"pet_{len(st.session_state.owner.pets) + 1}",
+                name=pet_name,
+                species=species,
+                age=int(age)
+            )
+            st.session_state.owner.add_pet(new_pet)
+            st.success(f"🐾 {pet_name} has been successfully registered!")
+            st.rerun()
 
-st.subheader("Build Schedule")
-st.caption("This button should call your scheduling logic once you implement it.")
+    # --- SECTION B: MANAGE TASKS & SCHEDULING ---
+    if not st.session_state.owner.pets:
+        st.info("You haven't added any pets yet. Register a pet above to unlock scheduling features!")
+    else:
+        st.markdown("### 📋 Your Current Pets")
+        for pet in st.session_state.owner.pets:
+            st.write(f"- **{pet.name}** ({pet.species}, Age: {pet.age})")
+            
+        st.divider()
+        
+        # --- SECTION C: ADD A TASK TO A SPECIFIC PET ---
+        st.subheader("📅 Add Pet Care Task")
+        
+        # Dropdown to select which pet gets the task
+        pet_options = {pet.name: pet for pet in st.session_state.owner.pets}
+        selected_pet_name = st.selectbox("Select target pet:", list(pet_options.keys()))
+        target_pet = pet_options[selected_pet_name]
+        
+        with st.form("add_task_form", clear_on_submit=True):
+            task_desc = st.text_input("Task Description (e.g., Morning Feeding)")
+            priority_val = st.slider("Priority Level (1 = Low, 5 = High)", min_value=1, max_value=5, value=3)
+            due_time_str = st.text_input("Due Time (e.g., 08:00, 04:30 PM, 2026-06-28 12:00)")
+            submitted_task = st.form_submit_button("Schedule Task")
+            
+        if submitted_task and task_desc and due_time_str:
+            new_task = Task(
+                id=f"task_{sum(len(p.tasks) for p in st.session_state.owner.pets) + 1}",
+                description=task_desc,
+                priority=priority_val,
+                due_time=due_time_str,
+                is_completed=False
+            )
+            # Add directly using your OOP method
+            target_pet.add_task(new_task)
+            st.success(f"Added task for {target_pet.name}: '{task_desc}' due at {due_time_str}")
+            st.rerun()
 
-if st.button("Generate schedule"):
-    st.warning(
-        "Not implemented yet. Next step: create your scheduling logic (classes/functions) and call it here."
-    )
-    st.markdown(
-        """
-Suggested approach:
-1. Design your UML (draft).
-2. Create class stubs (no logic).
-3. Implement scheduling behavior.
-4. Connect your scheduler here and display results.
-"""
-    )
+        st.divider()
+
+        # --- SECTION D: GENERATE DAILY CHRONOLOGICAL AGENDA ---
+        st.subheader("⏳ Generate Chronological Schedule")
+        st.caption("This initializes your Scheduler class and sorts all tasks from your pets.")
+        
+        if st.button("Generate Master Schedule"):
+            # Instantiate the scheduler using our dynamic memory data
+            scheduler = Scheduler(owner=st.session_state.owner)
+            master_schedule = scheduler.build_schedule()
+            
+            if not master_schedule:
+                st.info("All caught up! No tasks left on the agenda.")
+            else:
+                st.success("Chronological Schedule Built Successfully!")
+                
+                # Render out the results into a clean UI table
+                schedule_data = []
+                for task in master_schedule:
+                    # Find which pet owns this task for context
+                    owning_pet = next((p.name for p in st.session_state.owner.pets if task in p.tasks), "Unknown")
+                    schedule_data.append({
+                        "Pet": owning_pet,
+                        "Time Due": task.due_time,
+                        "Task Description": task.description,
+                        "Priority": task.priority,
+                        "Status": "✅ Done" if task.is_completed else "⏳ Pending"
+                    })
+#                st.table(schedule_data)
+# Bypassing st.table to prevent the pyarrow AVX crash
+                st.markdown("### 📋 Master Schedule Rows")
+                for row in schedule_data:
+                    # Safely extract strings from your row dictionary
+                    time_str = row.get("time", row.get("Due Time", "N/A")) 
+                    pet_str = row.get("Pet", "N/A")
+                    task_str = row.get("description", row.get("Task", "N/A")) 
+                    priority_str = row.get("Priority", "N/A")
+    
+                    st.markdown(f"⏱️ **{time_str}** | 🐾 **{pet_str}** | 📝 {task_str} | 🔴 *Priority: {priority_str}*")
+
+                # Render a short written briefing for the owner
+                render_schedule_briefing(master_schedule)
