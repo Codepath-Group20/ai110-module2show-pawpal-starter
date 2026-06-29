@@ -22,6 +22,7 @@
 - How did you decide which constraints mattered most?
 
 **b. Tradeoffs**
+Tradeoff (Phase 4): The conflict detection algorithm only flags tasks that share an exact timestamp matching string instead of analyzing overlapping durations (e.g., assuming an appointment takes 30 minutes). This keeps the system lightweight and performant on legacy architectures while avoiding complex timezone or range tracking.
 
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
