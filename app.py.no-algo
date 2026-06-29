@@ -137,7 +137,6 @@ else:
             task_desc = st.text_input("Task Description (e.g., Morning Feeding)")
             priority_val = st.slider("Priority Level (1 = Low, 5 = High)", min_value=1, max_value=5, value=3)
             due_time_str = st.text_input("Due Time (e.g., 08:00, 04:30 PM, 2026-06-28 12:00)")
-            task_freq = st.selectbox("Frequency", ["none", "daily", "weekly"])
             submitted_task = st.form_submit_button("Schedule Task")
             
         if submitted_task and task_desc and due_time_str:
@@ -148,13 +147,9 @@ else:
                 due_time=due_time_str,
                 is_completed=False
             )
-            # Assign the frequency attribute added in Phase 4
-            if hasattr(new_task, 'frequency'):
-                new_task.frequency = task_freq
-                
             # Add directly using your OOP method
             target_pet.add_task(new_task)
-            st.success(f"Added task for {target_pet.name}: '{task_desc}' due at {due_time_str} (Frequency: {task_freq})")
+            st.success(f"Added task for {target_pet.name}: '{task_desc}' due at {due_time_str}")
             st.rerun()
 
         st.divider()
@@ -163,47 +158,17 @@ else:
         st.subheader("⏳ Generate Chronological Schedule")
         st.caption("This initializes your Scheduler class and sorts all tasks from your pets.")
         
-        # Phase 4 Interactive Filtering UI
-        st.markdown("#### 🔍 Filter Options")
-        col1, col2 = st.columns(2)
-        with col1:
-            filter_pet = st.selectbox("Filter by Pet", ["All"] + list(pet_options.keys()))
-        with col2:
-            filter_status = st.selectbox("Filter by Status", ["All Incomplete", "All Completed", "Show Everything"])
-
         if st.button("Generate Master Schedule"):
             # Instantiate the scheduler using our dynamic memory data
             scheduler = Scheduler(owner=st.session_state.owner)
-            
-            # 1. Run Conflict Detection Algorithm
-            st.markdown("### ⚠️ Schedule Health Warnings")
-            conflicts = scheduler.detect_conflicts()
-            if conflicts:
-                for warning in conflicts:
-                    st.warning(warning)
-            else:
-                st.success("✅ No scheduling conflicts detected!")
-
-            # 2. Build and Sort Master Schedule
             master_schedule = scheduler.build_schedule()
             
-            # Apply Phase 4 filter logic based on selections
-            pet_filter_arg = None if filter_pet == "All" else filter_pet
-            status_filter_arg = None
-            if filter_status == "All Incomplete":
-                status_filter_arg = False
-            elif filter_status == "All Completed":
-                status_filter_arg = True
-                
-            if hasattr(scheduler, 'filter_tasks') and (pet_filter_arg or status_filter_arg is not None):
-                master_schedule = scheduler.filter_tasks(pet_name=pet_filter_arg, completion_status=status_filter_arg)
-            
             if not master_schedule:
-                st.info("No tasks left on the agenda matching your filter constraints.")
+                st.info("All caught up! No tasks left on the agenda.")
             else:
-                st.success("Chronological Schedule Processed Successfully!")
+                st.success("Chronological Schedule Built Successfully!")
                 
-                # Render out the results into a clean list structure
+                # Render out the results into a clean UI table
                 schedule_data = []
                 for task in master_schedule:
                     # Find which pet owns this task for context
@@ -213,24 +178,19 @@ else:
                         "Time Due": task.due_time,
                         "Task Description": task.description,
                         "Priority": task.priority,
-                        "Frequency": getattr(task, 'frequency', 'none'),
                         "Status": "✅ Done" if task.is_completed else "⏳ Pending"
                     })
-
-                # Bypassing st.table safely with accurate keys
+#                st.table(schedule_data)
+# Bypassing st.table to prevent the pyarrow AVX crash
                 st.markdown("### 📋 Master Schedule Rows")
                 for row in schedule_data:
-                    time_str = row.get("Time Due", "N/A")
+                    # Safely extract strings from your row dictionary
+                    time_str = row.get("time", row.get("Due Time", "N/A")) 
                     pet_str = row.get("Pet", "N/A")
-                    task_str = row.get("Task Description", "N/A")
+                    task_str = row.get("description", row.get("Task", "N/A")) 
                     priority_str = row.get("Priority", "N/A")
-                    freq_str = row.get("Frequency", "none")
-                    status_str = row.get("Status", "⏳ Pending")
-                    
-                    recur_icon = " 🔄" if freq_str != "none" else ""
-                    
-                    st.markdown(f"⏱️ **{time_str}**{recur_icon} | 🐾 **{pet_str}** | 📝 {task_str} | 🔴 *Priority: {priority_str}* | {status_str}")
+    
+                    st.markdown(f"⏱️ **{time_str}** | 🐾 **{pet_str}** | 📝 {task_str} | 🔴 *Priority: {priority_str}*")
 
-                st.write("---")
                 # Render a short written briefing for the owner
                 render_schedule_briefing(master_schedule)
