@@ -58,7 +58,8 @@ Paste a sample of your app's CLI or Streamlit output here so a reader can see wh
 
 ```bash
 # Run the full test suite:
-pytest
+# pytest
+python -m pytest -v
 
 # Run with coverage:
 pytest --cov
@@ -69,6 +70,17 @@ Sample test output:
 ```
 # Paste your pytest output here
 ```
+============================= test session starts ==============================
+platform linux -- Python 3.11.13, pytest-9.1.1, pluggy-1.6.0
+collected 5 items                                                              
+
+tests/test_pawpal.py::test_task_completion_updates_status PASSED         [ 20%]
+tests/test_pawpal.py::test_add_task_increases_pet_task_count PASSED      [ 40%]
+tests/test_pawpal.py::test_recurring_daily_task_creates_new_incomplete_copy PASSED [ 60%]
+tests/test_pawpal.py::test_scheduler_detects_conflicts_and_filters_tasks PASSED [ 80%]
+tests/test_pawpal.py::test_sorting_correctness PASSED                    [100%]
+
+============================== 5 passed in 0.19s ===============================
 
 ## 📐 Smarter Scheduling
 

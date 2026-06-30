@@ -57,3 +57,20 @@ def test_scheduler_detects_conflicts_and_filters_tasks() -> None:
     assert any("Mini" in warning and "Max" in warning for warning in conflicts)
     assert len(filtered) == 1
     assert filtered[0].description == "Feed Mini"
+
+
+def test_sorting_correctness() -> None:
+    owner = Owner(id="owner-2", name="Taylor")
+    pet = Pet(id="pet-5", name="Luna", species="Cat", age=5)
+    owner.add_pet(pet)
+
+    later_task = Task(id="task-6", description="Later task", priority=2, due_time="10:00")
+    earlier_task = Task(id="task-7", description="Earlier task", priority=1, due_time="08:00")
+    pet.add_task(later_task)
+    pet.add_task(earlier_task)
+
+    scheduler = Scheduler(owner)
+    ordered_tasks = scheduler.build_schedule()
+
+    assert ordered_tasks[0] is earlier_task
+    assert ordered_tasks[1] is later_task
