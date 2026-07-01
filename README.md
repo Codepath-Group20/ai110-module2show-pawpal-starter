@@ -138,17 +138,10 @@ TOTAL                 95      6    94%
 
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
-
-|Feature	|		Method(s)			|			Notes
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-Task sorting	|	Scheduler.sort_tasks()			|		Sorts tasks chronologically, then breaks ties using priority levels. |
-Filtering	|	Scheduler.filter_schedule()		|		Skips or flags tasks if the owner's available time limit for the day is exceeded. |
-Conflict handling |	Scheduler.detect_conflicts()		|		Detects if multiple tasks or pets overlap at the exact same time slot and flags a health warning. |
-Recurring tasks	 |	Task.create_recurring() or Pet.handle_recurring() |	Automatically generates a new, incomplete copy of a daily care task once the current one is marked done. |
+| Task sorting | Scheduler.sort_tasks() | Sorts tasks chronologically, then breaks ties using priority levels. |
+| Filtering | Scheduler.filter_schedule() | Skips or flags tasks if the owner's available time limit for the day is exceeded. |
+| Conflict handling | Scheduler.detect_conflicts() | Detects if multiple tasks or pets overlap at the exact same time slot and flags a health warning. |
+| Recurring tasks | Task.create_recurring() or Pet.handle_recurring() |	Automatically generates a new, incomplete copy of a daily care task once the current one is marked done. |
 
 ## 📸 Demo Walkthrough
 
