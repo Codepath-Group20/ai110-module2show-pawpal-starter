@@ -164,5 +164,7 @@ Review the Pet Care Breakdown: Check the critical task summary and the pet-by-pe
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
 https://github.com/Codepath-Group20/ai110-module2show-pawpal-starter/blob/main/Peek-streamlit-UI.gif
+
 https://github.com/Codepath-Group20/ai110-module2show-pawpal-starter/blob/main/Peek_UI.gif
+
 https://github.com/Codepath-Group20/ai110-module2show-pawpal-starter/blob/main/Peek_streaklit.gif
