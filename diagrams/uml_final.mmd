@@ -1,0 +1,54 @@
+classDiagram
+    class Task {
+        +str id
+        +str description
+        +int priority
+        +str due_time
+        +bool is_completed
+        +str frequency
+        +mark_complete(pet: Optional[Pet] = None) None
+    }
+
+    class FeedingTask {
+    }
+
+    class MedicationTask {
+    }
+
+    class AppointmentTask {
+    }
+
+    Task <|-- FeedingTask
+    Task <|-- MedicationTask
+    Task <|-- AppointmentTask
+
+    class Pet {
+        +str id
+        +str name
+        +str species
+        +int age
+        +List[Task] tasks
+        +add_task(task: Task) None
+        +get_daily_agenda() List[Task]
+    }
+
+    class Owner {
+        +str id
+        +str name
+        +List[Pet] pets
+        +add_pet(pet: Pet) None
+    }
+
+    class Scheduler {
+        +Owner owner
+        +__init__(owner: Owner) None
+        -_time_sort_key(due_time: str) tuple
+        +get_all_tasks() List[Task]
+        +filter_tasks(pet_name: Optional[str] = None, completion_status: Optional[bool] = None) List[Task]
+        +detect_conflicts() List[str]
+        +build_schedule() List[Task]
+    }
+
+    Owner "1" o-- "0..*" Pet : owns
+    Pet "1" *-- "0..*" Task : contains
+    Scheduler --> Owner : references

@@ -174,39 +174,46 @@ else:
         if st.button("Generate Master Schedule"):
             # Instantiate the scheduler using our dynamic memory data
             scheduler = Scheduler(owner=st.session_state.owner)
-            
-            # 1. Run Conflict Detection Algorithm
+
             st.markdown("### ⚠️ Schedule Health Warnings")
             conflicts = scheduler.detect_conflicts()
             if conflicts:
+                st.warning("Potential scheduling conflicts detected:")
                 for warning in conflicts:
                     st.warning(warning)
             else:
                 st.success("✅ No scheduling conflicts detected!")
 
-            # 2. Build and Sort Master Schedule
+            # Build the master schedule in strict chronological order first.
             master_schedule = scheduler.build_schedule()
-            
-            # Apply Phase 4 filter logic based on selections
+
+            # Apply the Phase 4 filter logic while preserving the chronological order.
             pet_filter_arg = None if filter_pet == "All" else filter_pet
             status_filter_arg = None
             if filter_status == "All Incomplete":
                 status_filter_arg = False
             elif filter_status == "All Completed":
                 status_filter_arg = True
-                
-            if hasattr(scheduler, 'filter_tasks') and (pet_filter_arg or status_filter_arg is not None):
-                master_schedule = scheduler.filter_tasks(pet_name=pet_filter_arg, completion_status=status_filter_arg)
-            
+
+            if pet_filter_arg is not None or status_filter_arg is not None:
+                master_schedule = [
+                    task
+                    for task in master_schedule
+                    if (pet_filter_arg is None or any(
+                        pet.name == pet_filter_arg for pet in st.session_state.owner.pets if task in pet.tasks
+                    ))
+                    and (status_filter_arg is None or task.is_completed is status_filter_arg)
+                ]
+
             if not master_schedule:
                 st.info("No tasks left on the agenda matching your filter constraints.")
             else:
                 st.success("Chronological Schedule Processed Successfully!")
-                
-                # Render out the results into a clean list structure
+                st.caption("Tasks are displayed in strict chronological order using the scheduler's built-in ordering.")
+
+                # Render out the results into a clean list structure.
                 schedule_data = []
                 for task in master_schedule:
-                    # Find which pet owns this task for context
                     owning_pet = next((p.name for p in st.session_state.owner.pets if task in p.tasks), "Unknown")
                     schedule_data.append({
                         "Pet": owning_pet,
@@ -217,7 +224,6 @@ else:
                         "Status": "✅ Done" if task.is_completed else "⏳ Pending"
                     })
 
-                # Bypassing st.table safely with accurate keys
                 st.markdown("### 📋 Master Schedule Rows")
                 for row in schedule_data:
                     time_str = row.get("Time Due", "N/A")
@@ -226,11 +232,10 @@ else:
                     priority_str = row.get("Priority", "N/A")
                     freq_str = row.get("Frequency", "none")
                     status_str = row.get("Status", "⏳ Pending")
-                    
+
                     recur_icon = " 🔄" if freq_str != "none" else ""
-                    
+
                     st.markdown(f"⏱️ **{time_str}**{recur_icon} | 🐾 **{pet_str}** | 📝 {task_str} | 🔴 *Priority: {priority_str}* | {status_str}")
 
                 st.write("---")
-                # Render a short written briefing for the owner
                 render_schedule_briefing(master_schedule)
