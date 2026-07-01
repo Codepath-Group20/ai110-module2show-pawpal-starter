@@ -170,3 +170,6 @@ Check Schedule Health Warnings: Scan the top of the dashboard for any potential 
 Review the Pet Care Breakdown: Check the critical task summary and the pet-by-pet breakdown at the bottom to see exactly how many tasks are remaining for each pet and what needs to be done next.
 
 **Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+https://github.com/Codepath-Group20/ai110-module2show-pawpal-starter/blob/main/Peek-streamlit-UI.gif
+https://github.com/Codepath-Group20/ai110-module2show-pawpal-starter/blob/main/Peek_UI.gif
+https://github.com/Codepath-Group20/ai110-module2show-pawpal-starter/blob/main/Peek_streaklit.gif
