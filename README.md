@@ -138,10 +138,10 @@ TOTAL                 95      6    94%
 
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | Scheduler.sort_tasks() | Sorts tasks chronologically, then breaks ties using priority levels. |
-| Filtering | Scheduler.filter_schedule() | Skips or flags tasks if the owner's available time limit for the day is exceeded. |
-| Conflict handling | Scheduler.detect_conflicts() | Detects if multiple tasks or pets overlap at the exact same time slot and flags a health warning. |
-| Recurring tasks | Task.create_recurring() or Pet.handle_recurring() |	Automatically generates a new, incomplete copy of a daily care task once the current one is marked done. |
+| Task sorting | Scheduler.sort_tasks() | Dynamically sorts all incomplete pet tasks chronologically using a robust multi-format time parser key (_time_sort_key). |
+| Filtering | Scheduler.filter_schedule() | Allows isolating specific tasks by filtering the master agenda by pet name and/or completion status. | 
+| Conflict handling | Scheduler.detect_conflicts() | Automatically groups tasks by time slots and throws warning flags if multiple unique pets are double-booked at the same time. |
+| Recurring tasks | Task.create_recurring() or Pet.handle_recurring() |	When a task set to "daily" is finished, it computes the next calendar day's timestamp and appends a fresh, pending copy to the pet's list. |
 
 ## 📸 Demo Walkthrough
 
